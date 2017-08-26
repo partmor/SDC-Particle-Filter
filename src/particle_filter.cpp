@@ -53,10 +53,48 @@ void ParticleFilter::init(double x, double y, double theta, double std_pos[]) {
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
-	// TODO: Add measurements to each particle and add random Gaussian noise.
-	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
-	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
-	//  http://www.cplusplus.com/reference/random/default_random_engine/
+
+  //random number engine
+  default_random_engine gen;
+
+  // iterate over the vector of particles
+  for(vector<Particle>::size_type i = 0; i != particles.size(); i++) {
+
+    // retrieve particle current state
+    Particle particle = particles[i];
+    double x0 = particle.x;
+    double y0 = particle.y;
+    double theta0 = particle.theta;
+
+    // predict new state of the particle: apply motion model
+    double xp, yp, thetap;
+    // avoid division by zero
+    if (fabs(yaw_rate) > 0.001) {
+      xp = x0 + velocity/yaw_rate * ( sin (theta0 + yaw_rate*delta_t) - sin(theta0));
+      yp = y0 + velocity/yaw_rate * ( cos(theta0) - cos(theta0 + yaw_rate*delta_t) );
+      thetap = theta0 + yaw_rate * delta_t;
+    }
+    else {
+      xp = x0 + velocity * delta_t * cos(theta0);
+      yp = y0 + velocity * delta_t * sin(theta0);
+      thetap = theta0;
+    }
+
+    // NOTE: the method is receiving std of x, y, theta given for GPS.
+    // std should be related to velocity and yaw_rate, and be applied on these,
+    // not directly on position: issue on Udacity's side.
+
+    // create normal distributions for x, y and theta
+    normal_distribution<double> dist_x(xp, std_pos[0]);
+    normal_distribution<double> dist_y(yp, std_pos[1]);
+    normal_distribution<double> dist_theta(thetap, std_pos[2]);
+
+    // add random noise and update particle
+    particle.x = dist_x(gen);
+    particle.y = dist_y(gen);
+    particle.theta = dist_theta(gen);
+    particles[i] = particle;
+  }
 
 }
 
