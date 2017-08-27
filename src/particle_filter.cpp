@@ -12,6 +12,7 @@
 #include <math.h> 
 #include <iostream>
 #include <sstream>
+
 #include <string>
 #include <iterator>
 
@@ -26,15 +27,10 @@ void ParticleFilter::init(double x, double y, double theta, double std_pos[]) {
   //random number engine
   default_random_engine gen;
 
-  // standard deviations for x, y, and theta
-  double std_x = std_pos[0];
-  double std_y = std_pos[1];
-  double std_theta = std_pos[2];
-
   // create normal distributions for x, y and theta
-  normal_distribution<double> dist_x(x, std_x);
-  normal_distribution<double> dist_y(y, std_y);
-  normal_distribution<double> dist_theta(theta, std_theta);
+  normal_distribution<double> dist_x(x, std_pos[0]);
+  normal_distribution<double> dist_y(y, std_pos[1]);
+  normal_distribution<double> dist_theta(theta, std_pos[2]);
 
 
   for (int i = 0; i < num_particles; ++i) {
