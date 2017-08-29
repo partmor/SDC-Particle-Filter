@@ -149,7 +149,7 @@ void ParticleFilter::resample() {
   // resample vector of particles
   vector<Particle> temp(particles); // copy
   for(vector<Particle>::size_type i = 0; i != particles.size(); i++){
-    sample_index = dd(gen);
+    int sample_index = dd(gen);
     particles[i] = temp[sample_index];
   }
 
