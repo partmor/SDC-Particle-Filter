@@ -45,6 +45,8 @@ void ParticleFilter::init(double x, double y, double theta, double std_pos[]) {
 
     // add created particle to the list of particles
     particles.push_back(particle);
+    // initialize weight list
+    weights.push_back(1.0);
   }
 }
 
@@ -104,6 +106,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // set weight to 1:
     double weight = 1.0;
 
+    // vectores to store the association details for each particle
+    vector<int> associations;
+    vector<double> sense_x;
+    vector<double> sense_y;
+
     // extract particle position
     double xp = particles[i].x;
     double yp = particles[i].y;
@@ -119,8 +126,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       double xm = xp + xc * cos(thetap) - yc * sin(thetap);
       double ym = yp + xc * sin(thetap) + yc * cos(thetap);
 
-      double min_dist_ij;
-      double mu [2];
+      // initialize minimum distance to infinity
+      double min_dist_ij = numeric_limits<double>::infinity();
+      int nearest_landmark_id;
+      double nearest_landmark_x, nearest_landmark_y;
       for(vector<Map::single_landmark_s>::size_type k = 0; k != map_landmarks.landmark_list.size(); k++){
 
         // extract landmark coordinates (in map FoR)
@@ -131,15 +140,31 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         double dist_ijk = dist(xm, ym, xl, yl);
 
         // identify nearest landmark to the observation "j"
-        if(k == 0 || dist_ijk < min_dist_ij){
+        if(dist_ijk < min_dist_ij){
           min_dist_ij = dist_ijk;
-          mu[0] = xl;
-          mu[1] = yl;
+          nearest_landmark_id = map_landmarks.landmark_list[k].id_i;
+          nearest_landmark_x = xl;
+          nearest_landmark_y = yl;
         }
+
       }
+
+      // store associations: nearest landmark id, and respective (x,y) coordinates in global FoR
+      associations.push_back(nearest_landmark_id);
+      sense_x.push_back(nearest_landmark_x);
+      sense_y.push_back(nearest_landmark_y);
+
+      // mean of bivariate normal distribution: nearest landmark position
+      // evaluation of distribution @ (x,y): particle's observation in global FoR
+      double mu [2] = { nearest_landmark_x, nearest_landmark_y };
       weight *= bivariateNormalDist(xm, ym, mu, std_landmark);
     }
+
+    // set the associations for particle "i"
+    SetAssociations(particles[i], associations, sense_x, sense_y);
+    // set weight for particle "i"
     particles[i].weight = weight;
+    // add particle weight to weight list
     weights.push_back(weight);
   }
 }
