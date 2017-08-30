@@ -94,51 +94,64 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 
 }
 
-void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
+void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
+		std::vector<LandmarkObs> observations, Map map_landmarks) {
 
-  double min_dist_meas;
-  double dist_meas;
-  int index_min_dist_meas;
+  weights.clear();
 
-  // iterate over actual predicted landmarks
-  for(vector<LandmarkObs>::size_type i = 0; i != predicted.size(); i++){
-    // initialize minimum distance to landmark
-    min_dist_meas = dist(predicted[i].x, predicted[i].y, observations[0].x, observations[0].y);
-    index_min_dist_meas = 0;
-    // iterate over lidar measurements looking for nearest measurement to
-    // predicted landmark i
-    for(vector<LandmarkObs>::size_type j = 1; j != observations.size(); j++){
-      dist_meas = dist(predicted[i]. x,predicted[i].y, observations[j].x, observations[j].y);
-      if(dist_meas < min_dist_meas){
-        min_dist_meas = dist_meas;
-        index_min_dist_meas = j;
+  for(vector<Particle>::size_type i = 0; i != particles.size(); i++){
+
+    // set weight to 1:
+    double weight = 1.0;
+
+    // extract particle position
+    double xp = particles[i].x;
+    double yp = particles[i].y;
+    double thetap = particles[i].theta;
+
+    for(vector<LandmarkObs>::size_type j = 0; j != observations.size(); j++){
+
+      // extract observation components (in the particle's FoR)
+      double xc = observations[j].x;
+      double yc = observations[j].y;
+
+      // transform observation to map global FoR
+      double xm = xp + xc * cos(thetap) - yc * sin(thetap);
+      double ym = yp + xc * sin(thetap) + yc * cos(thetap);
+
+      double min_dist_ij;
+      double mu [2];
+      for(vector<Map::single_landmark_s>::size_type k = 0; k != map_landmarks.landmark_list.size(); k++){
+
+        // extract landmark coordinates (in map FoR)
+        double xl = map_landmarks.landmark_list[k].x_f;
+        double yl = map_landmarks.landmark_list[k].y_f;
+
+        // calculate between transformed observation and landmark (in map FoR)
+        double dist_ijk = dist(xm, ym, xl, yl);
+
+        // identify nearest landmark to the observation "j"
+        if(k == 0 || dist_ijk < min_dist_ij){
+          min_dist_ij = dist_ijk;
+          mu[0] = xl;
+          mu[1] = yl;
+        }
       }
+      weight *= bivariateNormalDist(xm, ym, mu, std_landmark);
     }
-    // association via id
-    observations[index_min_dist_meas].id = predicted[i].id;
+    particles[i].weight = weight;
+    weights.push_back(weight);
   }
 }
 
-void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
-		std::vector<LandmarkObs> observations, Map map_landmarks) {
-	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
-	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
-	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
-	//   according to the MAP'S coordinate system. You will need to transform between the two systems.
-	//   Keep in mind that this transformation requires both rotation AND translation (but no scaling).
-	//   The following is a good resource for the theory:
-	//   https://www.willamette.edu/~gorr/classes/GeneralGraphics/Transforms/transforms2d.htm
-	//   and the following is a good resource for the actual equation to implement (look at equation 
-	//   3.33
-	//   http://planning.cs.uiuc.edu/node99.html
+double ParticleFilter::bivariateNormalDist(double x, double y, double mu[], double sigma[]){
+  double ex = pow(x - mu[0], 2) / (2 * pow(sigma[0], 2));
+  double ey = pow(y - mu[1], 2) / (2 * pow(sigma[1], 2));
+  double c = 2 * M_PI * sigma[0] * sigma[1];
+  return 1 / c * exp(-(ex + ey));
 }
 
 void ParticleFilter::resample() {
-
-  // store particle weights into the `weight` vector
-  for(vector<Particle>::size_type i = 0; i != particles.size(); i++){
-    weights.push_back(particles[i].weight);
-  }
 
   // discrete distribution based on particle weights
   discrete_distribution<> dd(weights.begin(), weights.end());
@@ -147,12 +160,13 @@ void ParticleFilter::resample() {
   default_random_engine gen;
 
   // resample vector of particles
-  vector<Particle> temp(particles); // copy
+  vector<Particle> sampled_particles;
   for(vector<Particle>::size_type i = 0; i != particles.size(); i++){
     int sample_index = dd(gen);
-    particles[i] = temp[sample_index];
+    sampled_particles.push_back(particles[sample_index]);
   }
-
+  // update particles
+  particles = sampled_particles;
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
