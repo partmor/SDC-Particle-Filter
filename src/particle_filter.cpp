@@ -22,7 +22,7 @@ using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std_pos[]) {
 
-  num_particles = 100;
+  num_particles = 1;
 
   //random number engine
   default_random_engine gen;
@@ -103,18 +103,34 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
   for(vector<Particle>::size_type i = 0; i != particles.size(); i++){
 
-    // set weight to 1:
-    double weight = 1.0;
-
-    // vectores to store the association details for each particle
-    vector<int> associations;
-    vector<double> sense_x;
-    vector<double> sense_y;
-
     // extract particle position
     double xp = particles[i].x;
     double yp = particles[i].y;
     double thetap = particles[i].theta;
+
+    // set weight to 1:
+    double weight = 1.0;
+
+    // vectors to store the association details for each particle
+    vector<int> associations;
+    vector<double> sense_x;
+    vector<double> sense_y;
+
+    // landmarks in sensor range
+    vector<Map::single_landmark_s> landmarks_ir;
+
+    // make sure vectors are empty at the beginning of each step
+    associations.clear();
+    sense_x.clear();
+    sense_y.clear();
+    landmarks_ir.clear();
+
+    for(vector<Map::single_landmark_s>::size_type k = 0; k != map_landmarks.landmark_list.size(); k++){
+      Map::single_landmark_s landmark = map_landmarks.landmark_list[k];
+      if(dist(xp, yp, landmark.x_f, landmark.y_f) < sensor_range){
+        landmarks_ir.push_back(landmark);
+      }
+    }
 
     for(vector<LandmarkObs>::size_type j = 0; j != observations.size(); j++){
 
@@ -127,22 +143,22 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       double ym = yp + xc * sin(thetap) + yc * cos(thetap);
 
       // initialize minimum distance to infinity
-      double min_dist_ij = numeric_limits<double>::infinity();
+      double min_dist = numeric_limits<double>::infinity();
       int nearest_landmark_id;
       double nearest_landmark_x, nearest_landmark_y;
-      for(vector<Map::single_landmark_s>::size_type k = 0; k != map_landmarks.landmark_list.size(); k++){
+      for(vector<Map::single_landmark_s>::size_type k = 0; k != landmarks_ir.size(); k++){
 
         // extract landmark coordinates (in map FoR)
-        double xl = map_landmarks.landmark_list[k].x_f;
-        double yl = map_landmarks.landmark_list[k].y_f;
+        double xl = landmarks_ir[k].x_f;
+        double yl = landmarks_ir[k].y_f;
 
         // calculate between transformed observation and landmark (in map FoR)
-        double dist_ijk = dist(xm, ym, xl, yl);
+        double dist_obs_landmark = dist(xm, ym, xl, yl);
 
         // identify nearest landmark to the observation "j"
-        if(dist_ijk < min_dist_ij){
-          min_dist_ij = dist_ijk;
-          nearest_landmark_id = map_landmarks.landmark_list[k].id_i;
+        if(dist_obs_landmark < min_dist){
+          min_dist = dist_obs_landmark;
+          nearest_landmark_id = landmarks_ir[k].id_i;
           nearest_landmark_x = xl;
           nearest_landmark_y = yl;
         }
