@@ -22,7 +22,7 @@ using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std_pos[]) {
 
-  num_particles = 10;
+  num_particles = 100;
 
   //random number engine
   default_random_engine gen;
@@ -48,6 +48,9 @@ void ParticleFilter::init(double x, double y, double theta, double std_pos[]) {
     // initialize weight list
     weights.push_back(1.0);
   }
+
+  // mark particle filter as initialized
+  is_initialized = true;
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -119,12 +122,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // landmarks in sensor range
     vector<Map::single_landmark_s> landmarks_ir;
 
-    // make sure vectors are empty at the beginning of each step
-    associations.clear();
-    sense_x.clear();
-    sense_y.clear();
-    landmarks_ir.clear();
-
     for(vector<Map::single_landmark_s>::size_type k = 0; k != map_landmarks.landmark_list.size(); k++){
       Map::single_landmark_s landmark = map_landmarks.landmark_list[k];
       if(dist(xp, yp, landmark.x_f, landmark.y_f) < sensor_range){
@@ -183,6 +180,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // add particle weight to weight list
     weights.push_back(weight);
   }
+
 }
 
 double ParticleFilter::bivariateNormalDist(double x, double y, double mu[], double sigma[]){
@@ -208,6 +206,7 @@ void ParticleFilter::resample() {
   }
   // update particles
   particles = sampled_particles;
+
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
