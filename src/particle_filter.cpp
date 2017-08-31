@@ -22,7 +22,7 @@ using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std_pos[]) {
 
-  num_particles = 1;
+  num_particles = 10;
 
   //random number engine
   default_random_engine gen;
@@ -177,7 +177,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     }
 
     // set the associations for particle "i"
-    SetAssociations(particles[i], associations, sense_x, sense_y);
+    particles[i] = SetAssociations(particles[i], associations, sense_x, sense_y);
     // set weight for particle "i"
     particles[i].weight = weight;
     // add particle weight to weight list
