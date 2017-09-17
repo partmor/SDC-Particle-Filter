@@ -5,11 +5,11 @@
 [ctrv]: ./img/ctrv.png
 [ctrv_yaw0]: ./img/ctrv_yaw0.png
 
-The goal of this project is to implement a **2D particle filter** in C++ to localize a vehicle. Given the map, the particle filter is initialized with the help of a GPS measurement. The subsequent steps in the process will refine this estimate to localize our vehicle with the help of observation and control data.
+The goal of this project is to implement a **2D particle filter** in C++ to localize a vehicle. Given the map, the particle filter is initialized with the help of a GPS measurement. The subsequent steps in the process will refine this estimate to localize our vehicle with the usage of observation and control data.
 
 ![sample_gif]
 
-The observations, control, and update state data are streamed with Udacity's [Self-Driving Car simulator](https://github.com/udacity/self-driving-car-sim).
+The observations, control, and updated state data are streamed with Udacity's [Self-Driving Car simulator](https://github.com/udacity/self-driving-car-sim).
 
 ## Process and Implementation
 
@@ -22,7 +22,7 @@ The flowchart bellow represents the steps and corresponding inputs to the partic
 In this project, the vehicle is simplified with the **bycicle model**:
 + 2D motion
 + The front wheels of the car are connected to the rear wheels by a rigid beam with fixed length
-+ The front two wheels are together, so they can be represented by one wheel. The same holds for the rear wheels.
++ The front two wheels are actioned together, so they can be represented by one wheel. The same holds for the rear wheels.
 + The car is controlled with a steering angle of the simplified front wheel.
 
 Bearing this in mind, the location of each particle will be determined by its `[x, y]` position and heading `theta`.
