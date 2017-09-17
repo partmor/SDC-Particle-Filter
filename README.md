@@ -49,7 +49,7 @@ This step is implemented in the `ParticleFilter::prediction` method.
 
 ### 3. Data Association
 
-For each particle, each one of the measured observations is associated to a map landmark via nearest neighbour search. In order to calculate observation-landmark distances, the observations are transformed from local (particle) to map (global) frame of reference.
+For each particle, each one of the measured observations is associated to a map landmark via **nearest neighbour** search. In order to calculate observation-landmark distances, the observations are transformed from local (particle) to map (global) frame of reference.
 
 ```
 for each particle :
@@ -63,6 +63,19 @@ This pseudocode snippet is implemented in `ParticleFilter::updateWeights`.
 
 ### 4. Update
 
-The final weight of each particle is calculated as the product of each measurement's probability to correspond to its associated landmark. The probability factors are approximated by evaluating a Multivariate Gaussian distribution in `ParticleFilter::updateWeights`.
+The final weight of each particle is calculated as the **product** of each measurement's **probability** to correspond to its associated landmark. The probability factors are approximated by evaluating a Multivariate Gaussian distribution in `ParticleFilter::updateWeights`.
 
 The mean of the distribution is the measurement's associated landmark position and the standard deviation is described by the initial uncertainty in the x and y ranges. The Multivariate-Gaussian is evaluated at the point of the transformed measurement's position. 
+
+### 5. Resampling
+
+The particles are sampled `N` times **with replacement** (`N` equals the number of particles of the filter), using a discrete distribution based on the particle weights, where the probablility of a particle to be drawn is **proportional** to its **weight**.
+
+This step is implemented in `ParticleFilter::resample`.
+
+## Conclusion
+
+After this process, the new set of particles represents the **Bayes filter posterior probability**, constituting a refined estimate of the vehicles position based on input evidence.
+
+The only tunable parameter in this exercise was the number of particles in the filter, `N`. This [YouTube link](https://www.youtube.com/watch?v=j0PFELPxgho) presents a successfull execution using `N = 100`.
+
