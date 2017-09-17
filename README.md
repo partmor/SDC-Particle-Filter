@@ -46,3 +46,23 @@ Wheareas if the yaw rate is zero:
 This step is implemented in the `ParticleFilter::prediction` method.
 
 *Note*: Gaussian noise should be added to the velocity and yaw rate inputs, in order to account for the uncertainty in the control inputs. However, as provided by Udacity, the method is expected to apply GPS sensor noise on `x`, `y` and `theta` for each particle. IMO this is erroneous, but I have yet decided to implementet it in order to fit the provided interface and meet the final grading criteria.
+
+### 3. Data Association
+
+For each particle, each one of the measured observations is associated to a map landmark via nearest neighbour search. In order to calculate observation-landmark distances, the observations are transformed from local (particle) to map (global) frame of reference.
+
+```
+for each particle :
+    get landmarks in range
+    for each observation:
+        transform observation to map coordinates
+        get nearest landmark in range to observation
+```
+
+This pseudocode snippet is implemented in `ParticleFilter::updateWeights`.
+
+### 4. Update
+
+The final weight of each particle is calculated as the product of each measurement's probability to correspond to its associated landmark. The probability factors are approximated by evaluating a Multivariate Gaussian distribution in `ParticleFilter::updateWeights`.
+
+The mean of the distribution is the measurement's associated landmark position and the standard deviation is described by the initial uncertainty in the x and y ranges. The Multivariate-Gaussian is evaluated at the point of the transformed measurement's position. 
